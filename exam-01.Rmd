@@ -92,6 +92,7 @@ install.packages("tidyverse")
 library("nycflights13")
 library("tidyverse")
 ```
+
 ## The data
 
 The `nycflights13` package contains information about all flights that departed from NYC (e.g. EWR, JFK and LGA) in 2013.
@@ -121,6 +122,22 @@ print(top_destinations)
     Make a table that lists these in descending order of frequency and shows the number of flights for each airline.
     In your narrative mention the names of the airlines as well.
     *Hint:* You can use the `airlines` dataset to look up the airline name based on `carrier` code.
+```{r}
+view(airlines)
+```
+
+```{r}
+flights_airlines <- merge(flights, airlines, by="carrier")
+
+top_airlines <- flights_airlines %>%
+  group_by(name) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(10)
+
+print(top_airlines)
+```
+**Answer: United, JetBlue, ExpressJet, Delta, American, Envoy, US Airways, Endeavor, Southwest, and Virgin America have the most flights departing NYC airports in 2013.** **Approach: I used the same code from question 1, but i used the merge function in order to join the airlines and flights datasets into 1 dataset so the name of the airline would be available instead of just the carrier.**
 
 3.  **Question 3 (10 points)** - Consider only flights that have non-missing arrival delay information.
     Your answer should include the name of the carrier in addition to the carrier code and the values asked.
