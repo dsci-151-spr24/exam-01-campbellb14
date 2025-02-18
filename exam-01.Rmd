@@ -106,6 +106,16 @@ The main data is in the `flights` data frame, but there are additional data sets
 
 1.  **Question 1 (10 points)** - What are the ten most common destinations for flights from NYC airports in 2013?
     Make a table that lists these in descending order of frequency and shows the number of fligts heading to each airport.
+```{r}
+top_destinations <- flights %>%
+  group_by(dest) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(10)
+
+print(top_destinations)
+```
+**Answer: The top ten most common destinations for flights from NYC airports in 2013 are ORD, ATL, LAX, BOS, MCO, CLT, SFO, FLL, MIA, and DCA. ORD being the most common and DCA being the least common.** **Approach: First, I grouped by the destination variable. Then, I needed the count of flights to each destination. Next, I sorted the results in descending order. Finally, I put only the top 10 in the table. Lastly, I used the print function to view the table.** 
 
 2.  **Question 2 (10 points)** - Which airlines have the most flights departing from NYC airports in 2013?
     Make a table that lists these in descending order of frequency and shows the number of flights for each airline.
