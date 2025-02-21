@@ -1,16 +1,17 @@
 ---
-title: "Take Home Exam #1"
+title: 'Take Home Exam #1'
 author: "Campbell Bowers"
 date: "February 24, 2024"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r}
 #| label: setup
-#| include: false
+#| include: true
 
-# set the echo option to FALSE to see how the document looks with the code suppressed
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ## Rules
@@ -93,6 +94,10 @@ library("nycflights13")
 library("tidyverse")
 ```
 
+```{r}
+view(flights)
+```
+
 ## The data
 
 The `nycflights13` package contains information about all flights that departed from NYC (e.g. EWR, JFK and LGA) in 2013.
@@ -116,7 +121,9 @@ top_destinations <- flights %>%
 
 print(top_destinations)
 ```
-**Answer: The top ten most common destinations for flights from NYC airports in 2013 are ORD, ATL, LAX, BOS, MCO, CLT, SFO, FLL, MIA, and DCA. ORD being the most common and DCA being the least common.** **Approach: First, I grouped by the destination variable. Then, I needed the count of flights to each destination. Next, I sorted the results in descending order. Finally, I put only the top 10 in the table. Lastly, I used the print function to view the table.** 
+**Answer: The top ten most common destinations for flights from NYC airports in 2013 are ORD, ATL, LAX, BOS, MCO, CLT, SFO, FLL, MIA, and DCA. ORD being the most common and DCA being the least common.** 
+
+**Approach: First, I grouped by the destination variable. Then, I needed the count of flights to each destination. Next, I sorted the results in descending order. Finally, I put only the top 10 in the table. Lastly, I used the print function to view the table. I used past assingments for help.** 
 
 2.  **Question 2 (10 points)** - Which airlines have the most flights departing from NYC airports in 2013?
     Make a table that lists these in descending order of frequency and shows the number of flights for each airline.
@@ -137,38 +144,127 @@ top_airlines <- flights_airlines %>%
 
 print(top_airlines)
 ```
-**Answer: United, JetBlue, ExpressJet, Delta, American, Envoy, US Airways, Endeavor, Southwest, and Virgin America have the most flights departing NYC airports in 2013.** **Approach: I used the same code from question 1, but i used the merge function in order to join the airlines and flights datasets into 1 dataset so the name of the airline would be available instead of just the carrier.**
+**Answer: United, JetBlue, ExpressJet, Delta, American, Envoy, US Airways, Endeavor, Southwest, and Virgin America have the most flights departing NYC airports in 2013.**
+
+**Approach: I used the same code from question 1, but i used the merge function in order to join the airlines and flights datasets into 1 dataset so the name of the airline would be available instead of just the carrier. I used the textbook to help me.**
 
 3.  **Question 3 (10 points)** - Consider only flights that have non-missing arrival delay information.
     Your answer should include the name of the carrier in addition to the carrier code and the values asked.
-
     a\.
     Which carrier had the highest mean arrival delay?
+```{r}
+flights %>%
+  group_by(carrier) %>%
+  summarise(delay = mean(arr_delay, na.rm = TRUE)) %>%
+  inner_join(airlines) %>% arrange(desc(delay)) %>% 
+  head(1)
+```
+***Answer: F9 or Frontier Airlines had the highest mean arrival delay.***
+
+***Approach: I used the group function to group carrier and name. I used the summarise function to find the mean of the delay. I used the arrange function to find the highest mean. I used the head function to find the highest value. I used the textbook to help me.***
 
     b\.
     Which carrier had the lowest mean arrival delay?
+```{r}
+flights %>%
+  group_by(carrier) %>%
+  summarise(delay = mean(arr_delay, na.rm = TRUE)) %>%
+  inner_join(airlines) %>% arrange(delay) %>% 
+  head(1)
+```
+***Answer: AS or Alaska Airlines had the lowest mean arrival delay.***
+
+***Approach: I used the group function to group carrier and name. I used the summarise function to find the mean of the delay. I used the arrange function to find the lowest mean. I used the head function to find the lowest value. I used the textbook to help me.***
 
 4.  **Question 4 (10 points)** - What was the mean temperature at the origin airport on the day with the highest departure delay?
     Your answer should include the name of origin airport, the date with the highest departure delay, and the mean temperature on that day.
+```{r}
+worst <- flights %>%
+  arrange(desc(dep_delay)) %>%
+  slice(1) %>%
+  select(origin, year, month, day, dep_delay)
+
+weather_most_delayed <- worst %>%
+  left_join(weather, by = c("origin", "year", "month", "day")) %>%
+  summarise(
+    origin_airport = first(origin),
+    date = paste(first(year), first(month), first(day)),
+    mean_temp = mean(temp, na.rm = TRUE)
+  )
+
+print(weather_most_delayed)
+```
+***Answer: The mean temperature at JFK, the origin airport was 42.6575 degrees on January 9, 2013.***
+
+***Approach: I used the arrange function to find the highest departure delay. Then, I used the slice function to find the row with the worst delay. I used the left_join function to merge the flights and weather datasets. I used the summarise function to find the mean temperature for that day. I used the textbook to help me and past assignments for help.***
 
 5.  **Question 5 (15 points)** - Consider breaking the day into four time intervals: 12:01am-6am, 6:01am-12pm, 12:01pm-6pm, 6:01pm-12am.
 
     a\.
     Calculate the proportion of flights that are delayed at departure at each of these time intervals.
+```{r}
+flights <- flights %>%
+  mutate(dep_hour = floor(dep_time / 100)) %>%
+  mutate(time_interval = case_when(
+    dep_hour >= 0  & dep_hour < 6  ~ "12:01am-6am",
+    dep_hour >= 6  & dep_hour < 12 ~ "6:01am-12pm",
+    dep_hour >= 12 & dep_hour < 18 ~ "12:01pm-6pm",
+    dep_hour >= 18 & dep_hour <= 23 ~ "6:01pm-12am",
+  ))
 
+delays_proportion <- flights %>%
+  group_by(time_interval) %>%
+  summarise(
+    total_flights = n(),
+    delayed_flights = sum(dep_delay > 0, na.rm = TRUE),
+    proportion_delayed = delayed_flights / total_flights
+  ) 
+
+print(delays_proportion)
+```
+***Answer: From 6pm-12am, flights have the highest proportion of delays and 12am-6am they have the lowest proportion of delays.***
+
+***Approach: I used the mutate function to only get the hour. I used the case_when function to have each flight assigned to one of the intervals. I used the group_by function to group them by time intervals. I used the summarise function to take the total flights and delayed flights to get the proportions. I used the textbook to help me.***
+   
     b\.
     Comment on how the likelihood of being delayed change throughout the day?
+    
+***Early in the mornings are when flights are least likely to get delayed. As the day goes on, flights are more and more likey to be delayed. The latest time interval has the highest chance of being delayed.***
 
 6.  **Question 6 (15 points)** - Find the flight with the longest air time.
+```{r}
+longest_flight <- flights %>%
+  arrange(desc(air_time)) %>%    
+  slice(1)
 
+print(longest_flight)
+```
     a\.
     How long is this flight?
 
+***The flight is 13 hours and 35 minutes long.***
+  
     b\.
     What city did it fly to?
 
+***The plane flew to HNL or Honolulu, HI.***
+   
     c\.
     How many seats does the plane that flew this flight have?
+```{r}
+view(planes)
+```
+
+```{r}
+plane_seats <- planes %>%
+  filter(tailnum == longest_flight$tailnum) %>%
+  select(seats)
+
+print(plane_seats)
+```
+***Answer: The plane has 292 seats.***
+
+***Approach: For A and B I used the arrange function and used descending order to find the flight with the longest air time. I used the slice function for only the top flight to appear. I looked at the table to find the answers to A and B. For C, I used the planes dataset and used the filter function to find the plane that had the longest airtime. I used the select function to only have the number of seats appear in the table. I used the textbook to help me.***
 
 7.  **Question 7 (15 pts)** - The `airports` data frame contains information on a large number of primarily American airports.
     These data include location information for these airports in the form of latitude and longitude coordinates.
@@ -178,6 +274,22 @@ print(top_airlines)
     *Hint:* You will first need to limit your analysis to the Contiguous United States.
     [This Wikipedia article](https://en.wikipedia.org/wiki/List_of_extreme_points_of_the_United_States) can help, but you're welcomed to use other resources as well.
     Make sure to cite whatever resource you use.
+    
+```{r}
+airports_contiguous <- airports %>%
+  filter(lon >= -125, lon <= -66) 
+
+ggplot(airports_contiguous, aes(x = lon)) +
+  geom_histogram(binwidth = 2, fill = "blue", color = "black", alpha = 0.7) +
+  labs(
+    title = "Distribution of Airport Longitudes in the Contiguous U.S.",
+    x = "Longitude",
+    y = "Number of Airports"
+  )
+```
+***Answer: The highest concentration of airports is around -85, so there are more airports in the Eastern United States. There are fewer out West, but along the West coast there is a slight increase.***
+
+***Approach: I used the filter function to only include airports with the correct longitude to keep it within the contiguous United States. I found these numbers on the Wikipedia page linked in the question. Maine had a Longitude of around -66 and Washington had one of around -125. I used the ggplot function to create a histogram to visualize this information. I used past assignments for help.***
 
 8.  **Question 8 (15 pts)** - Recreate the plot included below using the `flights` data.
     Once you have created the visualization, in no more than one paragraph, describe what you think the point of this visualization might be.
@@ -185,6 +297,29 @@ print(top_airlines)
     You will have to create `arrival` yourself, it is a categorical variable that is equal to `"ontime"` when `arr_delay <= 0` and `"delayed"` when `arr_delay > 0`.
 
 ![](img/plot-to-recreate.png)
+```{r}
+flights %>% 
+  filter(dest %in% c("PHL","RDU")) %>% 
+  filter(month==12) %>% 
+  mutate(
+    Arrival= case_when(
+            arr_delay <= 0 ~ "ontime",
+            arr_delay > 0 ~ "delayed")) %>% 
+    filter(!is.na(Arrival)) %>% 
+ 
+ggplot(aes(x=Arrival, y= dep_delay, color=dest))+
+geom_boxplot()+
+facet_grid(dest~origin)+
+  labs(title="On time performance of NYC fligths",
+       subtitle="December 2013",
+  y="Departure delay", 
+        color = "Destination")
+```
+***Answer: The point of this visualization is to show the amount of delayed versus ontime flights. It's comparing EWR, JFK, and LGA to one another as well as the two destination airports, PHL and RDU. No flights from EWR fly to PHL.***
+
+***Approach: I used the filter function to only use flights arriving at certain airports as well as flights only in December. I used the mutate function to create the arrival variable and then used the filter function again to ensure no N/A data-points were included in the visualization. I used ggplot to create the visualization and geom_boxplot to get the formatting correct. I used the textbook and past assignments for help.***
+
+***Resource: Textbook. "R For Data Science"***
 
 **Extra Credit (5 pts)** - Create a visualization that effectively shows if there is a relationship between the average daily departure delay and the average daily temperature for all three New York city airports.
 Your answer must be given in a single pipe.
